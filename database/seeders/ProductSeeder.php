@@ -5,51 +5,76 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use App\Models\Products;
 
+use App\Models\Brand;
+use App\Models\Type;
+use App\Models\LipCondition;
+use App\Models\Undertone;
+
 class ProductSeeder extends Seeder
 {
     public function run(): void
     {
-        $knowledgeBase = [
-            [
-                'name' => 'SuperStay Matte Ink',
-                'brand' => 'Maybelline',
-                'type' => 'Lip Cream',
-                'description' => 'Tahan lama hingga 16 jam, cocok untuk bibir normal dan warna kulit warm.',
-                'target_undertone' => 'warm',
-                'finish' => 'matte',
-                'lip_condition' => 'normal',
-            ],
-            [
-                'name' => 'Gloss Bomb Universal',
-                'brand' => 'Fenty Beauty',
-                'type' => 'Lip Gloss',
-                'description' => 'Memberikan kilau maksimal dan melembapkan bibir kering. Cocok untuk semua undertone.',
-                'target_undertone' => 'neutral',
-                'finish' => 'glossy',
-                'lip_condition' => 'dry',
-            ],
-            [
-                'name' => 'Velvet Lip Tint',
-                'brand' => '3CE',
-                'type' => 'Lip Tint',
-                'description' => 'Tekstur halus menyamarkan garis bibir gelap, cocok untuk undertone cool.',
-                'target_undertone' => 'cool',
-                'finish' => 'velvet',
-                'lip_condition' => 'dark_lips',
-            ],
-            [
-                'name' => 'Butter Rush Lip Cream',
-                'brand' => 'Wardah',
-                'type' => 'Lip Cream',
-                'description' => 'Matte tapi melembapkan, menutupi bibir gelap dengan baik untuk undertone warm.',
-                'target_undertone' => 'warm',
-                'finish' => 'matte',
-                'lip_condition' => 'dark_lips',
-            ],
-        ];
+        $csvFile = fopen(base_path('Produk Lip.csv'), 'r');
+        $isFirstRow = true;
 
-        foreach ($knowledgeBase as $item) {
-            Products::create($item);
+        while (($data = fgetcsv($csvFile, 2000, ',')) !== FALSE) {
+            if ($isFirstRow) {
+                $isFirstRow = false;
+                continue;
+            }
+
+            if (!isset($data[0]) || empty(trim($data[0]))) {
+                continue;
+            }
+
+            $brandName = trim($data[0]);
+            $productName = trim($data[1]);
+            $variantName = isset($data[2]) ? trim($data[2]) : '';
+            $typeName = isset($data[3]) ? trim($data[3]) : 'Unknown';
+            $lipConditionsStr = isset($data[4]) ? trim($data[4]) : '';
+            $undertonesStr = isset($data[5]) ? trim($data[5]) : '';
+            $longLasting = !empty(trim($data[6])) ? trim($data[6]) : 'High-Stay';
+            $finish = isset($data[7]) && !empty(trim($data[7])) ? trim($data[7]) : 'Matte';
+            $price = isset($data[8]) && !empty(trim($data[8])) ? trim($data[8]) : '38500';
+
+            $brand = Brand::firstOrCreate(['name' => $brandName]);
+            $type = Type::firstOrCreate(['name' => $typeName]);
+
+            $fullName = $variantName !== '' ? $productName . ' - ' . $variantName : $productName;
+
+            $product = Products::create([
+                'brand_id' => $brand->id,
+                'type_id' => $type->id,
+                'name' => $fullName,
+                'description' => null,
+                'image_path' => null,
+                'finish' => $finish,
+                'long_lasting' => $longLasting,
+                'price' => $price
+            ]);
+
+            if ($lipConditionsStr !== '') {
+                $conditionsArray = array_map('trim', explode(',', $lipConditionsStr));
+                foreach ($conditionsArray as $condName) {
+                    $lipCondition = LipCondition::where('name', $condName)->first();
+                    if ($lipCondition) {
+                        $product->lipConditions()->attach($lipCondition->id);
+                    }
+                }
+            }
+
+            if ($undertonesStr !== '') {
+                $undertonesArray = array_map('trim', explode(',', $undertonesStr));
+                foreach ($undertonesArray as $utName) {
+                    $normalizedUtName = str_replace(' ', '-', $utName);
+                    $undertone = Undertone::where('name', $normalizedUtName)->first();
+                    if ($undertone) {
+                        $product->undertones()->attach($undertone->id);
+                    }
+                }
+            }
         }
+
+        fclose($csvFile);
     }
 }

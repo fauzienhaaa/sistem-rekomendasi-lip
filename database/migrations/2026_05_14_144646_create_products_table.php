@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -13,16 +12,14 @@ return new class extends Migration
     {
         Schema::create('products', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('brand_id')->constrained()->onDelete('cascade');
+            $table->foreignId('type_id')->constrained()->onDelete('cascade');
             $table->string('name');
-            $table->string('brand');
-            $table->string('type'); // Lip Cream, Lip Tint, Lipstick, Lip Gloss
-            $table->text('description');
-            
-            // Knowledge Base Attributes (Kriteria Pencocokan)
-            $table->string('target_undertone'); // warm, cool, neutral
-            $table->string('finish'); // matte, glossy, velvet
-            $table->string('lip_condition'); // dry, normal, dark_lips
-            
+            $table->text('description')->nullable();
+            $table->string('image_path')->nullable();
+            $table->string('finish');
+            $table->string('long_lasting');
+            $table->string('price');
             $table->timestamps();
         });
     }
