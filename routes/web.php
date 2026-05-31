@@ -17,7 +17,11 @@ Route::get('/', [RecommendationController::class, 'index'])->name('recommendatio
 Route::post('/recommendation', [RecommendationController::class, 'process'])->name('recommendation.process');
 
 // Admin Routes
-Route::prefix('admin')->name('admin.')->group(function () {
+$adminRouteGroup = env('ADMIN_DOMAIN') 
+    ? Route::domain(env('ADMIN_DOMAIN')) 
+    : Route::prefix('admin');
+
+$adminRouteGroup->name('admin.')->group(function () {
     Route::get('login', [AuthController::class, 'showLoginForm'])->name('login')->middleware('guest');
     Route::post('login', [AuthController::class, 'login'])->name('login.submit')->middleware('guest');
     Route::post('logout', [AuthController::class, 'logout'])->name('logout');
