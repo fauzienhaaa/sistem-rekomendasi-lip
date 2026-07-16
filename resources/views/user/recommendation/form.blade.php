@@ -82,8 +82,7 @@
                     class="block font-medium text-gray-700 mb-2 ml-1 transition-colors group-focus-within:text-rose-500">1.
                     Bagaimana kondisi bibirmu saat ini?</label>
                 <select name="kondisi_bibir"
-                    class="input-premium w-full p-3.5 border border-gray-200 rounded-xl focus:bg-white focus:outline-none focus:ring-4 focus:ring-rose-500/10 focus:border-rose-400 transition-all text-gray-700"
-                    required>
+                    class="input-premium w-full p-3.5 border border-gray-200 rounded-xl focus:bg-white focus:outline-none focus:ring-4 focus:ring-rose-500/10 focus:border-rose-400 transition-all text-gray-700">
                     <option value="" disabled selected>Pilih Kondisi Bibir...</option>
                     @foreach($lipConditions as $condition)
                         <option value="{{ $condition }}">{{ $condition }}</option>
@@ -97,8 +96,7 @@
                     class="block font-medium text-gray-700 mb-2 ml-1 transition-colors group-focus-within:text-rose-500">2.
                     Apa undertone atau kesesuaian warna kulitmu?</label>
                 <select name="kesesuaian_warna"
-                    class="input-premium w-full p-3.5 border border-gray-200 rounded-xl focus:bg-white focus:outline-none focus:ring-4 focus:ring-rose-500/10 focus:border-rose-400 transition-all text-gray-700"
-                    required>
+                    class="input-premium w-full p-3.5 border border-gray-200 rounded-xl focus:bg-white focus:outline-none focus:ring-4 focus:ring-rose-500/10 focus:border-rose-400 transition-all text-gray-700">
                     <option value="" disabled selected>Pilih Undertone/Warna...</option>
                     @foreach($undertones as $undertone)
                         <option value="{{ $undertone }}">{{ $undertone }}</option>
@@ -112,8 +110,7 @@
                     class="block font-medium text-gray-700 mb-2 ml-1 transition-colors group-focus-within:text-rose-500">3.
                     Hasil akhir (finish) seperti apa yang kamu suka?</label>
                 <select name="tekstur_finish"
-                    class="input-premium w-full p-3.5 border border-gray-200 rounded-xl focus:bg-white focus:outline-none focus:ring-4 focus:ring-rose-500/10 focus:border-rose-400 transition-all text-gray-700"
-                    required>
+                    class="input-premium w-full p-3.5 border border-gray-200 rounded-xl focus:bg-white focus:outline-none focus:ring-4 focus:ring-rose-500/10 focus:border-rose-400 transition-all text-gray-700">
                     <option value="" disabled selected>Pilih Hasil Akhir...</option>
                     @foreach($finishes as $finish)
                         <option value="{{ $finish }}">{{ $finish }}</option>
@@ -127,8 +124,7 @@
                     class="block font-medium text-gray-700 mb-2 ml-1 transition-colors group-focus-within:text-rose-500">4.
                     Seberapa lama ketahanan yang kamu butuhkan?</label>
                 <select name="ketahanan"
-                    class="input-premium w-full p-3.5 border border-gray-200 rounded-xl focus:bg-white focus:outline-none focus:ring-4 focus:ring-rose-500/10 focus:border-rose-400 transition-all text-gray-700"
-                    required>
+                    class="input-premium w-full p-3.5 border border-gray-200 rounded-xl focus:bg-white focus:outline-none focus:ring-4 focus:ring-rose-500/10 focus:border-rose-400 transition-all text-gray-700">
                     <option value="" disabled selected>Pilih Ketahanan...</option>
                     @foreach($longLastings as $lasting)
                         <option value="{{ $lasting }}">{{ str_replace('-', ' ', $lasting) }}</option>
@@ -142,8 +138,7 @@
                     class="block font-medium text-gray-700 mb-2 ml-1 transition-colors group-focus-within:text-rose-500">5.
                     Berapa budget yang kamu siapkan?</label>
                 <select name="rentang_harga"
-                    class="input-premium w-full p-3.5 border border-gray-200 rounded-xl focus:bg-white focus:outline-none focus:ring-4 focus:ring-rose-500/10 focus:border-rose-400 transition-all text-gray-700"
-                    required>
+                    class="input-premium w-full p-3.5 border border-gray-200 rounded-xl focus:bg-white focus:outline-none focus:ring-4 focus:ring-rose-500/10 focus:border-rose-400 transition-all text-gray-700">
                     <option value="" disabled selected>Pilih Rentang Harga...</option>
                     @foreach($priceRanges as $value => $label)
                         <option value="{{ $value }}">{{ $label }}</option>

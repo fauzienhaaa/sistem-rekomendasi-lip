@@ -19,7 +19,7 @@ class RecommendationController extends Controller
             ->distinct()
             ->pluck('finish')
             ->toArray();
-            
+
         sort($finishes);
 
         $longLastings = \App\Models\Products::select('long_lasting')->whereNotNull('long_lasting')->distinct()->pluck('long_lasting');
@@ -36,54 +36,112 @@ class RecommendationController extends Controller
 
     public function process(Request $request)
     {
-        // 1. VALIDASI: Menyesuaikan dengan 5 variabel dan nilai (value) dari GForm
         $request->validate([
-            'kondisi_bibir' => 'required|string',
-            'kesesuaian_warna' => 'required|string',
-            'tekstur_finish' => 'required|string',
-            'ketahanan' => 'required|string',
-            'rentang_harga' => 'required|string',
+            'kondisi_bibir' => 'nullable|string',
+            'kesesuaian_warna' => 'nullable|string',
+            'tekstur_finish' => 'nullable|string',
+            'ketahanan' => 'nullable|string',
+            'rentang_harga' => 'nullable|string',
         ]);
+        $products = Products::with(['brand', 'type', 'lipConditions', 'undertones'])->get();
 
-        // 2. INFERENCE ENGINE: Mencari kecocokan berdasarkan rule GForm
-        $query = Products::query();
+        // Cari harga tertinggi untuk perhitungan selisih harga
+        $maxPrice = Products::max('price');
+        if (!$maxPrice || $maxPrice == 0)
+            $maxPrice = 1;
 
-        // Kita bungkus kondisinya (closure) agar pencarian SQL tetap akurat dan tidak bocor
-        $query->where(function ($q) use ($request) {
+        $activeCriteriaCount = 0;
+        if (!empty($request->kondisi_bibir))
+            $activeCriteriaCount++;
+        if (!empty($request->kesesuaian_warna))
+            $activeCriteriaCount++;
+        if (!empty($request->tekstur_finish))
+            $activeCriteriaCount++;
+        if (!empty($request->ketahanan))
+            $activeCriteriaCount++;
+        if (!empty($request->rentang_harga))
+            $activeCriteriaCount++;
 
-            // Filter 1: Kondisi Bibir (Menembus relasi Pivot)
-            $q->whereHas('lipConditions', function ($subQuery) use ($request) {
-                $subQuery->where('name', $request->kondisi_bibir);
-            });
+        $recommendations = collect();
 
-            // Filter 2: Kesesuaian Warna (Pencocokan Persis)
-            $q->whereHas('undertones', function ($subQuery) use ($request) {
-                $subQuery->where('name', $request->kesesuaian_warna);
-            });
+        // Jika tidak ada kriteria yang dipilih sama sekali, kembalikan kosong atau semua produk
+        if ($activeCriteriaCount == 0) {
+            $recommendations = collect();
+        } else {
+            $weight = 1 / $activeCriteriaCount; // Pembobotan tergantung jumlah kriteria yang diisi
 
-            // Filter 3: Tekstur & Finish
-            // Menggunakan LIKE karena di CSV ada data "Satin/Velvet" dan form mengirim "Velvet"
-            $q->where('finish', 'LIKE', '%' . $request->tekstur_finish . '%');
+            foreach ($products as $product) {
+                $s1 = 0;
+                $s2 = 0;
+                $s3 = 0;
+                $s4 = 0;
+                $s5 = 0;
 
-            // Filter 4: Ketahanan
-            $q->where('long_lasting', $request->ketahanan);
+                // S1: Kondisi Bibir
+                if (!empty($request->kondisi_bibir) && $product->lipConditions->contains('name', $request->kondisi_bibir)) {
+                    $s1 = 1;
+                }
 
-            // Filter 5: Rentang Harga (Mapping dari String ke rentang Angka Price)
-            if ($request->rentang_harga === 'Ekonomis') {
-                $q->whereRaw('CAST(price AS UNSIGNED) <= 35000');
-            } elseif ($request->rentang_harga === 'Standar') {
-                $q->whereRaw('CAST(price AS UNSIGNED) > 35000')->whereRaw('CAST(price AS UNSIGNED) <= 75000');
-            } elseif ($request->rentang_harga === 'Premium') {
-                $q->whereRaw('CAST(price AS UNSIGNED) > 75000');
+                // S2: Kesesuaian Warna
+                if (!empty($request->kesesuaian_warna) && $product->undertones->contains('name', $request->kesesuaian_warna)) {
+                    $s2 = 1;
+                }
+
+                // S3: Tekstur & Finish
+                if (!empty($request->tekstur_finish) && stripos($product->finish, $request->tekstur_finish) !== false) {
+                    $s3 = 1;
+                }
+
+                // S4: Ketahanan
+                if (!empty($request->ketahanan) && $product->long_lasting === $request->ketahanan) {
+                    $s4 = 1;
+                }
+
+                // S5: Rentang Harga
+                if (!empty($request->rentang_harga)) {
+                    $targetPrice = 0;
+                    $inRange = false;
+                    $productPrice = (float) $product->price;
+
+                    if ($request->rentang_harga === 'Ekonomis') {
+                        $targetPrice = 35000;
+                        if ($productPrice <= $targetPrice) {
+                            $inRange = true;
+                        }
+                    } elseif ($request->rentang_harga === 'Standar') {
+                        $targetPrice = 75000;
+                        if ($productPrice > 35000 && $productPrice <= 75000) {
+                            $inRange = true;
+                        }
+                    } elseif ($request->rentang_harga === 'Premium') {
+                        $targetPrice = $maxPrice;
+                        if ($productPrice > 75000) {
+                            $inRange = true;
+                        }
+                    }
+
+                    if ($inRange) {
+                        $selisih = abs($targetPrice - $productPrice);
+                        $s5 = 1 - ($selisih / $maxPrice);
+                        if ($s5 < 0)
+                            $s5 = 0;
+                    }
+                }
+
+                // Total Similarity
+                $similarityScore = ($weight * $s1) + ($weight * $s2) + ($weight * $s3) + ($weight * $s4) + ($weight * $s5);
+
+                if ($similarityScore > 0) {
+                    $product->similarity_score = $similarityScore;
+                    $product->match_percentage = round($similarityScore * 100, 2);
+                    $recommendations->push($product);
+                }
             }
 
-        });
+            // Sorting tertinggi ke terendah
+            $recommendations = $recommendations->sortByDesc('similarity_score')->values();
+        }
 
-        // Ambil hasil rekomendasi dengan Eager Loading (Mengambil nama Brand & Type sekaligus)
-        $recommendations = $query->with(['brand', 'type', 'lipConditions', 'undertones'])->get();
-
-        // 3. LOGGING KE HISTORY DASHBOARD
-        // Jika ada hasil, kumpulkan namanya, jika tidak tulis "Tidak Ditemukan"
         if ($recommendations->count() > 0) {
             $productNames = $recommendations->pluck('name')->implode(', ');
         } else {

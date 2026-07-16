@@ -199,8 +199,14 @@
 
                                     <div class="relative z-10 flex-1">
                                         <div class="flex justify-between items-start mb-3">
-                                            <span
-                                                class="text-[10px] font-semibold bg-rose-100 text-rose-600 px-2.5 py-1 rounded-md uppercase tracking-wider">{{ $typeName }}</span>
+                                            <div class="flex gap-2">
+                                                @if(isset($firstProduct->match_percentage))
+                                                <span
+                                                    class="text-[10px] font-bold bg-green-100 text-green-700 px-2.5 py-1 rounded-md uppercase tracking-wider border border-green-200">✨ {{ $firstProduct->match_percentage }}% Cocok</span>
+                                                @endif
+                                                <span
+                                                    class="text-[10px] font-semibold bg-rose-100 text-rose-600 px-2.5 py-1 rounded-md uppercase tracking-wider">{{ $typeName }}</span>
+                                            </div>
                                             <span
                                                 class="text-xs font-semibold text-gray-400 bg-gray-50 px-2 py-1 rounded-md border border-gray-100">{{ $firstProduct->brand->name ?? 'Brand' }}</span>
                                         </div>
